@@ -60,13 +60,16 @@ func clipboardGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func clipboardPost(w http.ResponseWriter, r *http.Request) {
+	// maximum read of 1MB
+	var maximumBodySize int64 = 1048576
+	var requestBody RequestBody
+
 	if r.Header.Get("Content-Type") != "application/json" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	var requestBody RequestBody
-	// maximum read of 1MB
-	r.Body = http.MaxBytesReader(w, r.Body, 1048576)
+
+	r.Body = http.MaxBytesReader(w, r.Body, maximumBodySize)
 
 	// return a "json: unknown field"
 	dec := json.NewDecoder(r.Body)
