@@ -54,11 +54,19 @@ func clipboardHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			var requestBody RequestBody
-			err := json.NewDecoder(r.Body).Decode(&requestBody)
+			// maximum read of 1MB
+			r.Body = http.MaxBytesReader(w, r.Body, 1048576)
+
+			// return a "json: unknown field"
+			dec := json.NewDecoder(r.Body)
+			dec.DisallowUnknownFields()
+
+			err := dec.Decode(&requestBody)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
+
 			body := Body{http.StatusOK, writeClipboard(requestBody.Content)}
 			res, err := json.Marshal(body)
 			if err != nil {
