@@ -8,15 +8,19 @@ import (
 )
 
 type Body struct {
-	Status uint
-	Content string
+	Status uint `json:"status"`
+	Content string `json:"content"`
+}
+
+type RequestBody struct {
+	Content string `json:"content"`
 }
 
 func main() {
 	mux := http.NewServeMux()
-	mux.Handle("/clipboards", http.HandlerFunc(clipboardHandler))
-	mux.Handle("/halthz", http.HandlerFunc(healthzHandler))
 	mux.Handle("/", http.HandlerFunc(healthzHandler))
+	mux.Handle("/halthz", http.HandlerFunc(healthzHandler))
+	mux.Handle("/clipboards", http.HandlerFunc(clipboardHandler))
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }
 
@@ -38,16 +42,34 @@ func clipboardHandler(w http.ResponseWriter, r *http.Request) {
 			body := Body{http.StatusOK, readClipboard()}
 			res, err := json.Marshal(body)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write(res)
+		case http.MethodPost:
+			if r.Header.Get("Content-Type") != "application/json" {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			var requestBody RequestBody
+			err := json.NewDecoder(r.Body).Decode(&requestBody)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			body := Body{http.StatusOK, writeClipboard(requestBody.Content)}
+			res, err := json.Marshal(body)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			w.Write(res)
 		default:
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write(nil)
+			w.WriteHeader(http.StatusBadRequest)
 	}
 }
 
@@ -57,4 +79,12 @@ func readClipboard() (string){
 		return ""
 	}
 	return t
+}
+
+func writeClipboard(s string) (string){
+	err := clipboard.WriteAll(s)
+	if err != nil {
+		return ""
+	}
+	return readClipboard()
 }
