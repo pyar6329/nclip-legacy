@@ -41,7 +41,7 @@ func main() {
 		mux.Handle("/clipboards", http.HandlerFunc(clipboardHandler))
 		log.Fatal(http.ListenAndServe(":8080", mux))
 	default:
-		clipboardGetClient()
+		fmt.Print(clipboardGetClient())
 	}
 }
 
@@ -68,19 +68,21 @@ func clipboardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func clipboardGetClient() {
+func clipboardGetClient() string {
 	url := &url.URL{}
 	url.Scheme = "http"
 	url.Host = "localhost:8080"
+	url.Path = "/selections"
+	// timeout is 1 second
 	client := &http.Client{Timeout: time.Duration(1) * time.Second}
-	res, err := client.Get(url.String() + "/selections")
+	res, err := client.Get(url.String())
 	if err != nil {
 		fmt.Println(err)
-		return
+		return ""
 	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
-	fmt.Println(string(body))
+	return string(body)
 }
 
 func clipboardGet(w http.ResponseWriter, r *http.Request) {
