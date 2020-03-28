@@ -35,21 +35,29 @@ func main() {
 	flag.Usage = func() { usage() }
 	flag.Parse()
 
-	switch *s {
-	case true:
+	// server command: nclip --server
+	if *s {
 		mux := http.NewServeMux()
 		mux.Handle("/", http.HandlerFunc(healthzHandler))
 		mux.Handle("/halthz", http.HandlerFunc(healthzHandler))
 		mux.Handle("/clipboards", http.HandlerFunc(clipboardHandler))
 		log.Fatal(http.ListenAndServe(":8080", mux))
-	default:
-		if terminal.IsTerminal(0) {
-			clipboardStdout()
-		} else {
-			if err := clipboardStdin(); err != nil {
-				log.Fatal(err)
-			}
+		os.Exit(0)
+	}
+
+	// stdout command: nclip
+	if terminal.IsTerminal(0) {
+		s, err := clipboardStdout()
+		if err != nil {
+			log.Fatal(err)
 		}
+		fmt.Print(s)
+		os.Exit(0)
+	}
+
+	// stdin command: echo "aaaaa" | nclip
+	if err := clipboardStdin(); err != nil {
+		log.Fatal(err)
 	}
 }
 
@@ -76,8 +84,12 @@ func clipboardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func clipboardStdout() {
-	fmt.Print(clipboardGetClient())
+func clipboardStdout() (string, error) {
+	s, err := clipboardGetClient()
+	if err != nil {
+		return "", err
+	}
+	return s, nil
 }
 
 func clipboardStdin() error {
@@ -91,7 +103,7 @@ func clipboardStdin() error {
 	return nil
 }
 
-func clipboardGetClient() string {
+func clipboardGetClient() (string, error) {
 	url := &url.URL{
 		Scheme: "http",
 		Host:   "localhost:8080",
@@ -102,20 +114,20 @@ func clipboardGetClient() string {
 
 	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
-		return ""
+		return "", err
 	}
 
 	req.Header.Add("Content-Type", "application/json")
 	res, err := client.Do(req)
 	if err != nil {
-		return ""
+		return "", err
 	}
 	defer res.Body.Close()
 	var responseBody ResponseBody
 	if err = json.NewDecoder(res.Body).Decode(&responseBody); err != nil {
-		return ""
+		return "", err
 	}
-	return responseBody.Content
+	return responseBody.Content, nil
 }
 
 func clipboardPostClient(s string) error {
