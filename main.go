@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -40,7 +41,10 @@ func main() {
 		mux.Handle("/clipboards", http.HandlerFunc(clipboardHandler))
 		log.Fatal(http.ListenAndServe(":8080", mux))
 	default:
-		fmt.Print(clipboardGetClient())
+		// fmt.Print(clipboardGetClient())
+		if err := clipboardPostClient("🤔"); err != nil {
+			fmt.Print(err)
+		}
 	}
 }
 
@@ -92,6 +96,37 @@ func clipboardGetClient() string {
 		return ""
 	}
 	return responseBody.Content
+}
+
+func clipboardPostClient(s string) error {
+	url := &url.URL{
+		Scheme: "http",
+		Host:   "localhost:8080",
+		Path:   "clipboards",
+	}
+	// timeout is 1 second
+	client := &http.Client{Timeout: time.Duration(1) * time.Second}
+	requestBody := new(bytes.Buffer)
+	if err := json.NewEncoder(requestBody).Encode(&RequestBody{Content: s}); err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, url.String(), requestBody)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	var responseBody ResponseBody
+	if err = json.NewDecoder(res.Body).Decode(&responseBody); err != nil {
+		return err
+	}
+	return nil
 }
 
 func clipboardGet(w http.ResponseWriter, r *http.Request) {
