@@ -5,9 +5,12 @@ import (
 	"flag"
 	"fmt"
 	"github.com/atotto/clipboard"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"time"
 )
 
 type ResponseBody struct {
@@ -38,7 +41,7 @@ func main() {
 		mux.Handle("/clipboards", http.HandlerFunc(clipboardHandler))
 		log.Fatal(http.ListenAndServe(":8080", mux))
 	default:
-		fmt.Print("aaaaaaa")
+		clipboardGetClient()
 	}
 }
 
@@ -63,6 +66,21 @@ func clipboardHandler(w http.ResponseWriter, r *http.Request) {
 	default:
 		w.WriteHeader(http.StatusBadRequest)
 	}
+}
+
+func clipboardGetClient() {
+	url := &url.URL{}
+	url.Scheme = "http"
+	url.Host = "localhost:8080"
+	client := &http.Client{Timeout: time.Duration(1) * time.Second}
+	res, err := client.Get(url.String() + "/selections")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer res.Body.Close()
+	body, _ := ioutil.ReadAll(res.Body)
+	fmt.Println(string(body))
 }
 
 func clipboardGet(w http.ResponseWriter, r *http.Request) {
