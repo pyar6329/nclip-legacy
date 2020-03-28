@@ -7,7 +7,7 @@ import (
 	"github.com/atotto/clipboard"
 )
 
-type Body struct {
+type ResponseBody struct {
 	Status uint `json:"status"`
 	Content string `json:"content"`
 }
@@ -25,7 +25,7 @@ func main() {
 }
 
 func healthzHandler(w http.ResponseWriter, r *http.Request) {
-	body := Body{http.StatusOK, "health status is OK"}
+	body := ResponseBody{http.StatusOK, "health status is OK"}
 	res, err := json.Marshal(body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -39,7 +39,7 @@ func healthzHandler(w http.ResponseWriter, r *http.Request) {
 func clipboardHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 		case http.MethodGet:
-			body := Body{http.StatusOK, readClipboard()}
+			body := ResponseBody{http.StatusOK, readClipboard()}
 			res, err := json.Marshal(body)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
@@ -67,7 +67,7 @@ func clipboardHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			body := Body{http.StatusOK, writeClipboard(requestBody.Content)}
+			body := ResponseBody{http.StatusOK, writeClipboard(requestBody.Content)}
 			res, err := json.Marshal(body)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
