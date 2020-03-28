@@ -2,13 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/atotto/clipboard"
 	"log"
 	"net/http"
-	"github.com/atotto/clipboard"
 )
 
 type ResponseBody struct {
-	Status uint `json:"status"`
+	Status  uint   `json:"status"`
 	Content string `json:"content"`
 }
 
@@ -38,12 +38,12 @@ func healthzHandler(w http.ResponseWriter, r *http.Request) {
 
 func clipboardHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
-		case http.MethodGet:
-			clipboardGet(w, r)
-		case http.MethodPost:
-			clipboardPost(w, r)
-		default:
-			w.WriteHeader(http.StatusBadRequest)
+	case http.MethodGet:
+		clipboardGet(w, r)
+	case http.MethodPost:
+		clipboardPost(w, r)
+	default:
+		w.WriteHeader(http.StatusBadRequest)
 	}
 }
 
@@ -92,7 +92,7 @@ func clipboardPost(w http.ResponseWriter, r *http.Request) {
 	w.Write(res)
 }
 
-func readClipboard() (string){
+func readClipboard() string {
 	t, err := clipboard.ReadAll()
 	if err != nil {
 		return ""
@@ -100,7 +100,7 @@ func readClipboard() (string){
 	return t
 }
 
-func writeClipboard(s string) (string){
+func writeClipboard(s string) string {
 	err := clipboard.WriteAll(s)
 	if err != nil {
 		return ""
