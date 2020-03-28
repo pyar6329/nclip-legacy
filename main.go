@@ -39,46 +39,54 @@ func healthzHandler(w http.ResponseWriter, r *http.Request) {
 func clipboardHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 		case http.MethodGet:
-			body := ResponseBody{http.StatusOK, readClipboard()}
-			res, err := json.Marshal(body)
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			w.Write(res)
+			clipboardGet(w, r)
 		case http.MethodPost:
-			if r.Header.Get("Content-Type") != "application/json" {
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-			var requestBody RequestBody
-			// maximum read of 1MB
-			r.Body = http.MaxBytesReader(w, r.Body, 1048576)
-
-			// return a "json: unknown field"
-			dec := json.NewDecoder(r.Body)
-			dec.DisallowUnknownFields()
-
-			err := dec.Decode(&requestBody)
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-
-			body := ResponseBody{http.StatusOK, writeClipboard(requestBody.Content)}
-			res, err := json.Marshal(body)
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			w.Write(res)
+			clipboardPost(w, r)
 		default:
 			w.WriteHeader(http.StatusBadRequest)
 	}
+}
+
+func clipboardGet(w http.ResponseWriter, r *http.Request) {
+	body := ResponseBody{http.StatusOK, readClipboard()}
+	res, err := json.Marshal(body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(res)
+}
+
+func clipboardPost(w http.ResponseWriter, r *http.Request) {
+	if r.Header.Get("Content-Type") != "application/json" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	var requestBody RequestBody
+	// maximum read of 1MB
+	r.Body = http.MaxBytesReader(w, r.Body, 1048576)
+
+	// return a "json: unknown field"
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+
+	err := dec.Decode(&requestBody)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	body := ResponseBody{http.StatusOK, writeClipboard(requestBody.Content)}
+	res, err := json.Marshal(body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(res)
 }
 
 func readClipboard() (string){
