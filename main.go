@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/atotto/clipboard"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -69,20 +68,30 @@ func clipboardHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func clipboardGetClient() string {
-	url := &url.URL{}
-	url.Scheme = "http"
-	url.Host = "localhost:8080"
-	url.Path = "/selections"
+	url := &url.URL{
+		Scheme: "http",
+		Host:   "localhost:8080",
+		Path:   "clipboards",
+	}
 	// timeout is 1 second
 	client := &http.Client{Timeout: time.Duration(1) * time.Second}
-	res, err := client.Get(url.String())
+
+	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
-		fmt.Println(err)
+		return ""
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+	res, err := client.Do(req)
+	if err != nil {
 		return ""
 	}
 	defer res.Body.Close()
-	body, _ := ioutil.ReadAll(res.Body)
-	return string(body)
+	var responseBody ResponseBody
+	if err = json.NewDecoder(res.Body).Decode(&responseBody); err != nil {
+		return ""
+	}
+	return responseBody.Content
 }
 
 func clipboardGet(w http.ResponseWriter, r *http.Request) {
@@ -113,8 +122,7 @@ func clipboardPost(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 
-	err := dec.Decode(&requestBody)
-	if err != nil {
+	if err := dec.Decode(&requestBody); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -139,8 +147,7 @@ func readClipboard() string {
 }
 
 func writeClipboard(s string) string {
-	err := clipboard.WriteAll(s)
-	if err != nil {
+	if err := clipboard.WriteAll(s); err != nil {
 		return ""
 	}
 	return readClipboard()
