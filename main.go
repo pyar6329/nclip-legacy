@@ -2,9 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
+	"fmt"
 	"github.com/atotto/clipboard"
 	"log"
 	"net/http"
+	"os"
 )
 
 type ResponseBody struct {
@@ -16,12 +19,27 @@ type RequestBody struct {
 	Content string `json:"content"`
 }
 
+func usage() {
+	fmt.Println("Usage:")
+	flag.PrintDefaults()
+	os.Exit(0)
+}
+
 func main() {
-	mux := http.NewServeMux()
-	mux.Handle("/", http.HandlerFunc(healthzHandler))
-	mux.Handle("/halthz", http.HandlerFunc(healthzHandler))
-	mux.Handle("/clipboards", http.HandlerFunc(clipboardHandler))
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	s := flag.Bool("server", false, "running server default port: 8080")
+	flag.Usage = func() { usage() }
+	flag.Parse()
+
+	switch *s {
+	case true:
+		mux := http.NewServeMux()
+		mux.Handle("/", http.HandlerFunc(healthzHandler))
+		mux.Handle("/halthz", http.HandlerFunc(healthzHandler))
+		mux.Handle("/clipboards", http.HandlerFunc(clipboardHandler))
+		log.Fatal(http.ListenAndServe(":8080", mux))
+	default:
+		fmt.Print("aaaaaaa")
+	}
 }
 
 func healthzHandler(w http.ResponseWriter, r *http.Request) {
