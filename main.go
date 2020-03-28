@@ -6,6 +6,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/atotto/clipboard"
+	"golang.org/x/crypto/ssh/terminal"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -41,9 +43,12 @@ func main() {
 		mux.Handle("/clipboards", http.HandlerFunc(clipboardHandler))
 		log.Fatal(http.ListenAndServe(":8080", mux))
 	default:
-		// fmt.Print(clipboardGetClient())
-		if err := clipboardPostClient("🤔"); err != nil {
-			fmt.Print(err)
+		if terminal.IsTerminal(0) {
+			clipboardStdout()
+		} else {
+			if err := clipboardStdin(); err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 }
@@ -69,6 +74,21 @@ func clipboardHandler(w http.ResponseWriter, r *http.Request) {
 	default:
 		w.WriteHeader(http.StatusBadRequest)
 	}
+}
+
+func clipboardStdout() {
+	fmt.Print(clipboardGetClient())
+}
+
+func clipboardStdin() error {
+	s, err := ioutil.ReadAll(os.Stdin)
+	if err != nil {
+		return err
+	}
+	if err := clipboardPostClient(string(s)); err != nil {
+		return err
+	}
+	return nil
 }
 
 func clipboardGetClient() string {
