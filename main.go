@@ -58,19 +58,19 @@ func main() {
 	}
 
 	// stdout command: nclip
-	if terminal.IsTerminal(0) {
-		s, err := clipboardStdout()
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Print(s)
-		os.Exit(0)
-	}
-
-	// stdin command: echo "aaaaa" | nclip
-	if err := clipboardStdinFromPipe(); err != nil {
+	// if terminal.IsTerminal(0) {
+	st, err := clipboardStdout()
+	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Print(st)
+	os.Exit(0)
+	// }
+
+	// stdin command: echo "aaaaa" | nclip
+	// if err := clipboardStdinFromPipe(); err != nil {
+	// 	log.Fatal(err)
+	// }
 }
 
 func healthzHandler(w http.ResponseWriter, r *http.Request) {
