@@ -12,5 +12,6 @@ RUN set -x && \
 RUN --mount=type=bind,source=.,target=/go/src/github.com/pyar6329/nclip,rw \
   set -x && \
   cd /go/src/github.com/pyar6329/nclip && \
-  make build && \
+  CC=/osxcross/target/bin/o64-clang make -e build-darwin && \
+  CC=/usr/bin/musl-gcc make -e build-linux && \
   cp -rf build /build

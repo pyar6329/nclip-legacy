@@ -14,11 +14,11 @@ run: ## go run main.go
 
 .PHONY:	build-darwin
 build-darwin: ## go build to darwin amd64
-	@CGO_ENABLED=1 GOARCH="amd64" GOOS="darwin" CC=/osxcross/target/bin/o64-clang go build -a -tags netgo -ldflags '-w -s -extldflags "-static"' -o build/darwin/nclip *.go
+	@CGO_ENABLED=1 GOARCH="amd64" GOOS="darwin" go build -a -tags netgo -ldflags '-w -s -extldflags "-static"' -o build/darwin/nclip *.go
 
 .PHONY:	build-linux
 build-linux: ## go build to linux amd64
-	@CGO_ENABLED=1 GOARCH="amd64" GOOS="linux" CC=/usr/bin/musl-gcc go build -a -tags netgo -ldflags '-w -s -extldflags "-static"' -o build/linux/nclip *.go
+	@CGO_ENABLED=1 GOARCH="amd64" GOOS="linux" go build -a -tags netgo -ldflags '-w -s -extldflags "-static"' -o build/linux/nclip *.go
 
 .PHONY:	clean
 clean: ## clean build binary
