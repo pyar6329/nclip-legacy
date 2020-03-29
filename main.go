@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"flag"
@@ -12,6 +13,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
+	"syscall"
 	"time"
 )
 
@@ -32,6 +35,7 @@ func usage() {
 
 func main() {
 	s := flag.Bool("server", false, "running server default port: 8080")
+	c := flag.Bool("copy", false, "copy from stdin")
 	flag.Usage = func() { usage() }
 	flag.Parse()
 
@@ -42,6 +46,14 @@ func main() {
 		mux.Handle("/halthz", http.HandlerFunc(healthzHandler))
 		mux.Handle("/clipboards", http.HandlerFunc(clipboardHandler))
 		log.Fatal(http.ListenAndServe(":8080", mux))
+		os.Exit(0)
+	}
+
+	// stdin command: nclip --copy
+	if *c {
+		if err := clipboardStdin(); err != nil {
+			log.Fatal(err)
+		}
 		os.Exit(0)
 	}
 
@@ -56,7 +68,7 @@ func main() {
 	}
 
 	// stdin command: echo "aaaaa" | nclip
-	if err := clipboardStdin(); err != nil {
+	if err := clipboardStdinFromPipe(); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -87,18 +99,36 @@ func clipboardHandler(w http.ResponseWriter, r *http.Request) {
 func clipboardStdout() (string, error) {
 	s, err := clipboardGetClient()
 	if err != nil {
-		return "", err
+		return readClipboard(), nil
 	}
 	return s, nil
 }
 
 func clipboardStdin() error {
+	// from stdin
+	if terminal.IsTerminal(syscall.Stdin) {
+		input := bufio.NewScanner(os.Stdin)
+		var text []string
+		for input.Scan() {
+			text = append(text, input.Text())
+		}
+		s := strings.Join(text, "\n")
+		s += "\n"
+		if err := clipboardPostClient(s); err != nil {
+			writeClipboard(s)
+		}
+		return nil
+	}
+	return clipboardStdinFromPipe()
+}
+
+func clipboardStdinFromPipe() error {
 	s, err := ioutil.ReadAll(os.Stdin)
 	if err != nil {
 		return err
 	}
 	if err := clipboardPostClient(string(s)); err != nil {
-		return err
+		writeClipboard(string(s))
 	}
 	return nil
 }
@@ -106,7 +136,7 @@ func clipboardStdin() error {
 func clipboardGetClient() (string, error) {
 	url := &url.URL{
 		Scheme: "http",
-		Host:   "localhost:8080",
+		Host:   "0.0.0.0:8080",
 		Path:   "clipboards",
 	}
 	// timeout is 1 second
@@ -133,7 +163,7 @@ func clipboardGetClient() (string, error) {
 func clipboardPostClient(s string) error {
 	url := &url.URL{
 		Scheme: "http",
-		Host:   "localhost:8080",
+		Host:   "0.0.0.0:8080",
 		Path:   "clipboards",
 	}
 	// timeout is 1 second
