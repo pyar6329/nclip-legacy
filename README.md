@@ -7,6 +7,7 @@
 - [ ] Add vim plugin
 - [ ] Add `-h` documents and README.md (Usage)
 - [ ] Decide command name
+- [ ] Decide License (maybe MIT or 3-Clause BSD)
 - [ ] Add GitHub Action (build, release(upload))
 - [ ] Separate main.go as module
 - [ ] Add test code
