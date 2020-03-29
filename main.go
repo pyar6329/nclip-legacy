@@ -50,6 +50,7 @@ func main() {
 	}
 
 	// stdin command: nclip --copy
+	// stdin command from pipe: echo "aaaaa" | nclip --copy
 	if *c {
 		if err := clipboardStdin(); err != nil {
 			log.Fatal(err)
@@ -58,19 +59,12 @@ func main() {
 	}
 
 	// stdout command: nclip
-	// if terminal.IsTerminal(0) {
 	st, err := clipboardStdout()
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Print(st)
 	os.Exit(0)
-	// }
-
-	// stdin command: echo "aaaaa" | nclip
-	// if err := clipboardStdinFromPipe(); err != nil {
-	// 	log.Fatal(err)
-	// }
 }
 
 func healthzHandler(w http.ResponseWriter, r *http.Request) {
@@ -113,12 +107,12 @@ func clipboardStdin() error {
 			text = append(text, input.Text())
 		}
 		s := strings.Join(text, "\n")
-		s += "\n"
 		if err := clipboardPostClient(s); err != nil {
 			writeClipboard(s)
 		}
 		return nil
 	}
+	// from pipe
 	return clipboardStdinFromPipe()
 }
 
