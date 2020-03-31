@@ -34,7 +34,7 @@ func usage() {
 }
 
 func main() {
-	s := flag.Bool("server", false, "running server default port: 8080")
+	s := flag.Bool("server", false, "running server default port: 2230")
 	c := flag.Bool("copy", false, "copy from stdin")
 	flag.Usage = func() { usage() }
 	flag.Parse()
@@ -45,7 +45,7 @@ func main() {
 		mux.Handle("/", http.HandlerFunc(healthzHandler))
 		mux.Handle("/halthz", http.HandlerFunc(healthzHandler))
 		mux.Handle("/clipboards", http.HandlerFunc(clipboardHandler))
-		log.Fatal(http.ListenAndServe(":8080", mux))
+		log.Fatal(http.ListenAndServe(":2230", mux))
 		os.Exit(0)
 	}
 
@@ -130,7 +130,7 @@ func clipboardStdinFromPipe() error {
 func clipboardGetClient() (string, error) {
 	url := &url.URL{
 		Scheme: "http",
-		Host:   "0.0.0.0:8080",
+		Host:   "127.0.0.1:2230",
 		Path:   "clipboards",
 	}
 	// timeout is 1 second
@@ -157,7 +157,7 @@ func clipboardGetClient() (string, error) {
 func clipboardPostClient(s string) error {
 	url := &url.URL{
 		Scheme: "http",
-		Host:   "0.0.0.0:8080",
+		Host:   "127.0.0.1:2230",
 		Path:   "clipboards",
 	}
 	// timeout is 1 second
