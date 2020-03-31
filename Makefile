@@ -31,5 +31,4 @@ build: ## go build all binary
 
 .PHONY:	build-docker
 build-docker: ## go build on docker
-	@docker build -t foo:1 .
-	@docker run --rm -v $(PWD)/build:/tmp/build foo:1 bash -c "cp -rf /build/* /tmp/build/"
+	@docker build -o build .
