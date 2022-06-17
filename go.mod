@@ -1,8 +1,13 @@
 module github.com/pyar6329/nclip
 
-go 1.14
+go 1.18
 
 require (
-	github.com/atotto/clipboard v0.1.2
-	golang.org/x/crypto v0.0.0-20200323165209-0ec3e9974c59
+	github.com/atotto/clipboard v0.1.4
+	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
+)
+
+require (
+	golang.org/x/sys v0.0.0-20220615213510-4f61da869c0c // indirect
+	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
 )
