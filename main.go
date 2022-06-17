@@ -34,32 +34,40 @@ func usage() {
 }
 
 func main() {
-	s := flag.Bool("server", false, "running server default port: 2230")
+	s := flag.Bool("server", false, "running server")
 	c := flag.Bool("copy", false, "copy from stdin")
+	p := flag.Int64("port", 2230, "running port")
 	flag.Usage = func() { usage() }
 	flag.Parse()
+
+	// port command: nclip --server --port 4000
+	if portCheck(*p) == false {
+		log.Fatal("invalid port range. Please set 1024~65535")
+		os.Exit(1)
+	}
 
 	// server command: nclip --server
 	if *s {
 		mux := http.NewServeMux()
 		mux.Handle("/", http.HandlerFunc(healthzHandler))
-		mux.Handle("/halthz", http.HandlerFunc(healthzHandler))
+		mux.Handle("/healthz", http.HandlerFunc(healthzHandler))
 		mux.Handle("/clipboards", http.HandlerFunc(clipboardHandler))
-		log.Fatal(http.ListenAndServe(":2230", mux))
+		ps := fmt.Sprintf(":%d", *p)
+		log.Fatal(http.ListenAndServe(ps, mux))
 		os.Exit(0)
 	}
 
 	// stdin command: nclip --copy
 	// stdin command from pipe: echo "aaaaa" | nclip --copy
 	if *c {
-		if err := clipboardStdin(); err != nil {
+		if err := clipboardStdin(p); err != nil {
 			log.Fatal(err)
 		}
 		os.Exit(0)
 	}
 
 	// stdout command: nclip
-	st, err := clipboardStdout()
+	st, err := clipboardStdout(p)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -90,15 +98,15 @@ func clipboardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func clipboardStdout() (string, error) {
-	s, err := clipboardGetClient()
+func clipboardStdout(port *int64) (string, error) {
+	s, err := clipboardGetClient(port)
 	if err != nil {
 		return readClipboard(), nil
 	}
 	return s, nil
 }
 
-func clipboardStdin() error {
+func clipboardStdin(port *int64) error {
 	// from stdin
 	if terminal.IsTerminal(syscall.Stdin) {
 		input := bufio.NewScanner(os.Stdin)
@@ -107,30 +115,31 @@ func clipboardStdin() error {
 			text = append(text, input.Text())
 		}
 		s := strings.Join(text, "\n")
-		if err := clipboardPostClient(s); err != nil {
+		if err := clipboardPostClient(port, s); err != nil {
 			writeClipboard(s)
 		}
 		return nil
 	}
 	// from pipe
-	return clipboardStdinFromPipe()
+	return clipboardStdinFromPipe(port)
 }
 
-func clipboardStdinFromPipe() error {
+func clipboardStdinFromPipe(port *int64) error {
 	s, err := ioutil.ReadAll(os.Stdin)
 	if err != nil {
 		return err
 	}
-	if err := clipboardPostClient(string(s)); err != nil {
+	if err := clipboardPostClient(port, string(s)); err != nil {
 		writeClipboard(string(s))
 	}
 	return nil
 }
 
-func clipboardGetClient() (string, error) {
+func clipboardGetClient(port *int64) (string, error) {
+	host := fmt.Sprintf("127.0.0.1:%d", *port)
 	url := &url.URL{
 		Scheme: "http",
-		Host:   "127.0.0.1:2230",
+		Host:   host,
 		Path:   "clipboards",
 	}
 	// timeout is 1 second
@@ -144,6 +153,7 @@ func clipboardGetClient() (string, error) {
 	req.Header.Add("Content-Type", "application/json")
 	res, err := client.Do(req)
 	if err != nil {
+		log.Println("Clipboard Send was failed. Please check port option")
 		return "", err
 	}
 	defer res.Body.Close()
@@ -154,10 +164,11 @@ func clipboardGetClient() (string, error) {
 	return responseBody.Content, nil
 }
 
-func clipboardPostClient(s string) error {
+func clipboardPostClient(port *int64, s string) error {
+	host := fmt.Sprintf("127.0.0.1:%d", *port)
 	url := &url.URL{
 		Scheme: "http",
-		Host:   "127.0.0.1:2230",
+		Host:   host,
 		Path:   "clipboards",
 	}
 	// timeout is 1 second
@@ -175,6 +186,7 @@ func clipboardPostClient(s string) error {
 	req.Header.Add("Content-Type", "application/json")
 	res, err := client.Do(req)
 	if err != nil {
+		log.Println("Clipboard Send was failed. Please check port option")
 		return err
 	}
 	defer res.Body.Close()
@@ -242,4 +254,11 @@ func writeClipboard(s string) string {
 		return ""
 	}
 	return readClipboard()
+}
+
+func portCheck(p int64) bool {
+	if p >= 1024 && p <= 65535 {
+		return true
+	}
+	return false
 }
