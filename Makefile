@@ -12,9 +12,13 @@ run-server: ## go run main.go --server
 run: ## go run main.go
 	@go run ./main.go
 
-.PHONY:	build-darwin
-build-darwin: ## go build to darwin amd64
-	@CGO_ENABLED=1 GOARCH="amd64" GOOS="darwin" go build -a -tags netgo -ldflags '-w -s -extldflags "-static"' -o build/darwin/nclip *.go
+.PHONY:	build-darwin-intel
+build-darwin-intel: ## go build to darwin intel CPU
+	@CGO_ENABLED=1 GOARCH="amd64" GOOS="darwin" go build -a -tags netgo -ldflags '-w -s -extldflags "-static"' -o build/darwin/amd64/nclip *.go
+
+.PHONY:	build-darwin-arm
+build-darwin-arm: ## go build to darwin ARM CPU
+	@CGO_ENABLED=1 GOARCH="arm64" GOOS="darwin" go build -a -tags netgo -ldflags '-w -s -extldflags "-static"' -o build/darwin/arm64/nclip *.go
 
 .PHONY:	build-linux
 build-linux: ## go build to linux amd64
@@ -26,9 +30,6 @@ clean: ## clean build binary
 
 .PHONY:	build
 build: ## go build all binary
-	@make build-darwin
+	@make build-darwin-intel
+	@make build-darwin-arm
 	@make build-linux
-
-.PHONY:	build-docker
-build-docker: ## go build on docker
-	@docker build -o build .
