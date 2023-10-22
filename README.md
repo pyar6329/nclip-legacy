@@ -1,3 +1,3 @@
 # nclip
 
-This project was archived. Please check next project: https://github.com/pyar6329/nclip-rs
+This project was archived. Please check next project: https://github.com/pyar6329/nclip
